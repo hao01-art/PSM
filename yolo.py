@@ -36,7 +36,7 @@ if not os.path.exists(SNAPSHOT_FOLDER):
 
 # ====================== LOAD YOLO MODEL ======================
 print("🔄 Loading YOLOv8 model...")
-model = YOLO(MODEL_PATH)
+model = YOLO(MODEL_PATH, task='detect')  # Explicitly define task
 print("✅ Model loaded successfully.")
 
 # ====================== CAMERA SETUP ======================
@@ -51,7 +51,7 @@ print("🎥 Camera ready — press 'q' to quit, 'p' to snapshot.\n")
 COLOR_MAP = {}
 def get_color(label):
     if label not in COLOR_MAP:
-        COLOR_MAP[label] = list(np.random.randint(0, 255, 3))
+        COLOR_MAP[label] = tuple(int(c) for c in np.random.randint(0, 255, 3))
     return COLOR_MAP[label]
 
 # ====================== IOU FUNCTIONS ======================
@@ -112,14 +112,19 @@ while True:
         conf = obj["conf"]
         color = get_color(label)
 
+        # Draw bounding box
         cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+
+        # Draw label
         text = f"{label} {conf:.2f}"
         cv2.rectangle(frame, (x2 + 5, y1), (x2 + LABEL_BG_WIDTH, y1 + 25), color, -1)
         cv2.putText(frame, text, (x2 + 10, y1 + 18), FONT, FONT_SCALE, (255, 255, 255), FONT_THICKNESS)
 
+    # Display FPS
     fps = 1 / (time.time() - start_time + 1e-6)
     cv2.putText(frame, f"FPS: {fps:.1f}", (10,30), FONT, 0.7, (0,255,0), 2)
 
+    # Show frame
     cv2.imshow("YOLO PET Bottle Detection", frame)
 
     key = cv2.waitKey(1) & 0xFF
@@ -135,4 +140,3 @@ while True:
 picam2.stop()
 cv2.destroyAllWindows()
 print("✔ Resources released. Goodbye!")
-
