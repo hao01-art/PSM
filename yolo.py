@@ -5,7 +5,7 @@ import time
 import os
 
 # ====================== USER SETTINGS ======================
-MODEL_PATH = "/home/yolo/psm_bottle_yolov8s_model2.pt"
+MODEL_PATH = "/home/ben/yolo/psm_bottle_yolov8s_model2.pt"
 CONF_THRESHOLD = 0.5
 IOU_THRESHOLD = 0.6
 FONT = cv2.FONT_HERSHEY_SIMPLEX
@@ -147,3 +147,4 @@ while True:
 cap.release()
 cv2.destroyAllWindows()
 print("✔ All resources released. Goodbye!")
+
