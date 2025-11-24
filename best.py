@@ -125,7 +125,7 @@ while True:
     cv2.putText(frame, f"FPS: {fps:.1f}", (10,30), FONT, 0.7, (0,255,0), 2)
 
     # Show frame
-    cv2.imshow("YOLO PET Bottle Detection", frame)
+    cv2.imshow("YOLO PET Bottle Size Detection", frame)
 
     key = cv2.waitKey(1) & 0xFF
     if key == ord('q'):
@@ -141,3 +141,4 @@ picam2.stop()
 cv2.destroyAllWindows()
 
 print("✔ Resources released. Goodbye!")
+
