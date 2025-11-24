@@ -1,4 +1,4 @@
-# ======================================================
+# ====================================================== 
 # YOLOv8 Real-Time PET Bottle Detection (Pi 5 + Camera Module 3)
 # Features: Picamera2, IoU filtering, snapshots, consistent labels
 # ======================================================
@@ -120,9 +120,9 @@ while True:
         cv2.rectangle(frame, (x2 + 5, y1), (x2 + LABEL_BG_WIDTH, y1 + 25), color, -1)
         cv2.putText(frame, text, (x2 + 10, y1 + 18), FONT, FONT_SCALE, (255, 255, 255), FONT_THICKNESS)
 
-    # Display FPS
-    fps = 1 / (time.time() - start_time + 1e-6)
-    cv2.putText(frame, f"FPS: {fps:.1f}", (10,30), FONT, 0.7, (0,255,0), 2)
+    # ===== REMOVED FPS DISPLAY =====
+    # fps = 1 / (time.time() - start_time + 1e-6)
+    # cv2.putText(frame, f"FPS: {fps:.1f}", (10,30), FONT, 0.7, (0,255,0), 2)
 
     # Show frame
     cv2.imshow("YOLO PET Bottle Size Detection", frame)
@@ -141,4 +141,3 @@ picam2.stop()
 cv2.destroyAllWindows()
 
 print("✔ Resources released. Goodbye!")
-
