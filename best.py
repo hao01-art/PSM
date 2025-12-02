@@ -43,15 +43,6 @@ print("✅ Model loaded successfully.")
 picam2 = Picamera2()
 config = picam2.create_preview_configuration(main={"size": (640,640), "format": "RGB888"})
 picam2.configure(config)
-
-# Disable auto-exposure and auto-white-balance
-picam2.set_controls({"AeEnable": False})
-picam2.set_controls({"AwbEnable": False})
-
-# Optional: Manually set exposure and white balance (tune these for your lighting)
-# picam2.set_controls({"ExposureTime": 10000, "AnalogueGain": 1.0})
-# picam2.set_controls({"AwbGain": (1.5, 1.2)})
-
 picam2.start()
 time.sleep(2)  # Camera warm-up
 print("🎥 Camera ready — press 'q' to quit, 'p' to snapshot.\n")
@@ -129,6 +120,10 @@ while True:
         cv2.rectangle(frame, (x2 + 5, y1), (x2 + LABEL_BG_WIDTH, y1 + 25), color, -1)
         cv2.putText(frame, text, (x2 + 10, y1 + 18), FONT, FONT_SCALE, (255, 255, 255), FONT_THICKNESS)
 
+    # ===== REMOVED FPS DISPLAY =====
+    # fps = 1 / (time.time() - start_time + 1e-6)
+    # cv2.putText(frame, f"FPS: {fps:.1f}", (10,30), FONT, 0.7, (0,255,0), 2)
+
     # Show frame
     cv2.imshow("YOLO PET Bottle Size Detection", frame)
 
@@ -146,3 +141,4 @@ picam2.stop()
 cv2.destroyAllWindows()
 
 print("✔ Resources released. Goodbye!")
+
