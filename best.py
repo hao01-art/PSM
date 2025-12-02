@@ -1,6 +1,6 @@
 # ====================================================== 
 # YOLOv8 Real-Time PET Bottle Detection (Pi 5 + Camera Module 3)
-# Features: Picamera2, IoU filtering, snapshots, consistent labels + FPS display
+# Features: Picamera2, IoU filtering, snapshots, consistent labels
 # ======================================================
 
 from ultralytics import YOLO
@@ -11,7 +11,7 @@ import time
 import os
 
 # ====================== USER SETTINGS ======================
-MODEL_PATH = "/home/ben/yolo/psm_bottle_yolov8s_model2_ncnn_model"
+MODEL_PATH = "/home/ben/yolo/psm_bottle_yolov8s_model2.pt"
 CONF_THRESHOLD = 0.5
 IOU_THRESHOLD = 0.6
 FONT = cv2.FONT_HERSHEY_SIMPLEX
@@ -36,7 +36,7 @@ if not os.path.exists(SNAPSHOT_FOLDER):
 
 # ====================== LOAD YOLO MODEL ======================
 print("🔄 Loading YOLOv8 model...")
-model = YOLO(MODEL_PATH, task='detect')
+model = YOLO(MODEL_PATH, task='detect')  # Explicitly define task
 print("✅ Model loaded successfully.")
 
 # ====================== CAMERA SETUP ======================
@@ -44,7 +44,7 @@ picam2 = Picamera2()
 config = picam2.create_preview_configuration(main={"size": (640,640), "format": "RGB888"})
 picam2.configure(config)
 picam2.start()
-time.sleep(2)
+time.sleep(2)  # Camera warm-up
 print("🎥 Camera ready — press 'q' to quit, 'p' to snapshot.\n")
 
 # ====================== COLOUR MAP FOR CLASSES ======================
@@ -86,9 +86,9 @@ def filter_overlaps(boxes):
 
 # ====================== MAIN LOOP ======================
 while True:
-    start_time = time.time()   # START TIMER
-
+    start_time = time.time()
     frame = picam2.capture_array()
+
     results = model(frame, conf=CONF_THRESHOLD, verbose=False)
 
     detected_boxes = []
@@ -120,11 +120,11 @@ while True:
         cv2.rectangle(frame, (x2 + 5, y1), (x2 + LABEL_BG_WIDTH, y1 + 25), color, -1)
         cv2.putText(frame, text, (x2 + 10, y1 + 18), FONT, FONT_SCALE, (255, 255, 255), FONT_THICKNESS)
 
-    # ====================== FPS DISPLAY ======================
-    fps = 1 / (time.time() - start_time + 1e-6)
-    cv2.putText(frame, f"FPS: {fps:.1f}", (10, 30), FONT, 0.7, (0, 255, 0), 2)
+    # ===== REMOVED FPS DISPLAY =====
+    # fps = 1 / (time.time() - start_time + 1e-6)
+    # cv2.putText(frame, f"FPS: {fps:.1f}", (10,30), FONT, 0.7, (0,255,0), 2)
 
-    # ====================== SHOW FRAME ======================
+    # Show frame
     cv2.imshow("YOLO PET Bottle Size Detection", frame)
 
     key = cv2.waitKey(1) & 0xFF
@@ -139,4 +139,6 @@ while True:
 # ====================== CLEANUP ======================
 picam2.stop()
 cv2.destroyAllWindows()
+
 print("✔ Resources released. Goodbye!")
+
