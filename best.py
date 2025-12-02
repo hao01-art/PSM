@@ -11,7 +11,7 @@ import time
 import os
 
 # ====================== USER SETTINGS ======================
-MODEL_PATH = "/home/ben/yolo/psm_bottle_yolov8s_model2.pt"
+MODEL_PATH = "/home/ben/yolo/psm_bottle_yolov8s_model2_ncnn"
 CONF_THRESHOLD = 0.5
 IOU_THRESHOLD = 0.6
 FONT = cv2.FONT_HERSHEY_SIMPLEX
@@ -141,4 +141,5 @@ picam2.stop()
 cv2.destroyAllWindows()
 
 print("✔ Resources released. Goodbye!")
+
 
