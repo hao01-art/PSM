@@ -41,7 +41,7 @@ print("✅ Model loaded successfully.")
 
 # ====================== CAMERA SETUP ======================
 picam2 = Picamera2()
-config = picam2.create_preview_configuration(main={"size": (4608,2592), "format": "RGB888"})
+config = picam2.create_preview_configuration(main={"size": (1080,1080), "format": "RGB888"})
 picam2.configure(config)
 picam2.start()
 time.sleep(2)  # Camera warm-up
@@ -141,6 +141,7 @@ picam2.stop()
 cv2.destroyAllWindows()
 
 print("✔ Resources released. Goodbye!")
+
 
 
 
