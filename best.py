@@ -1,7 +1,6 @@
 # ======================================================
 # YOLOv8 Real-Time PET Bottle Detection (Pi 5 + Camera Module 3)
-# Features: Picamera2, IoU filtering, snapshots, consistent labels
-# Manual control of bottle size classes (1-4)
+# Manual override of bottle sizing class while keeping bounding box
 # ======================================================
 
 from ultralytics import YOLO
@@ -31,6 +30,14 @@ CLASS_NAMES = [
     "PET-Bottle-1500ml"
 ]
 
+# Mapping keys 1-4 to your requested bottle classes
+MANUAL_BOTTLE_MAP = {
+    ord('1'): "PET-Bottle-250ml",
+    ord('2'): "PET-Bottle-500ml",
+    ord('3'): "PET-Bottle-600ml",
+    ord('4'): "PET-Bottle-1500ml"
+}
+
 # ====================== SETUP SNAPSHOT FOLDER ======================
 if not os.path.exists(SNAPSHOT_FOLDER):
     os.makedirs(SNAPSHOT_FOLDER)
@@ -38,7 +45,7 @@ if not os.path.exists(SNAPSHOT_FOLDER):
 
 # ====================== LOAD YOLO MODEL ======================
 print("🔄 Loading YOLOv8 model...")
-model = YOLO(MODEL_PATH, task='detect')  # Explicitly define task
+model = YOLO(MODEL_PATH, task='detect')
 print("✅ Model loaded successfully.")
 
 # ====================== CAMERA SETUP ======================
@@ -46,10 +53,10 @@ picam2 = Picamera2()
 config = picam2.create_preview_configuration(main={"size": (640,640), "format": "RGB888"})
 picam2.configure(config)
 picam2.start()
-time.sleep(2)  # Camera warm-up
+time.sleep(2)
 print("🎥 Camera ready — press 'q' to quit, 'p' to snapshot, 1-4 to select bottle size.\n")
 
-# ====================== COLOUR MAP FOR CLASSES ======================
+# ====================== COLOUR MAP ======================
 COLOR_MAP = {}
 def get_color(label):
     if label not in COLOR_MAP:
@@ -65,16 +72,14 @@ def compute_iou(boxA, boxB):
     interArea = max(0, xB - xA) * max(0, yB - yA)
     areaA = (boxA[2]-boxA[0])*(boxA[3]-boxA[1])
     areaB = (boxB[2]-boxB[0])*(boxB[3]-boxB[1])
-    iou = interArea / float(areaA + areaB - interArea + 1e-6)
-    return iou
+    return interArea / float(areaA + areaB - interArea + 1e-6)
 
 def filter_overlaps(boxes):
     filtered = []
     for box in boxes:
         keep = True
         for fbox in filtered:
-            iou = compute_iou(box["coords"], fbox["coords"])
-            if iou > IOU_THRESHOLD:
+            if compute_iou(box["coords"], fbox["coords"]) > IOU_THRESHOLD:
                 area_box = (box["coords"][2]-box["coords"][0])*(box["coords"][3]-box["coords"][1])
                 area_fbox = (fbox["coords"][2]-fbox["coords"][0])*(fbox["coords"][3]-fbox["coords"][1])
                 if area_box <= area_fbox:
@@ -87,46 +92,29 @@ def filter_overlaps(boxes):
     return filtered
 
 # ====================== MAIN LOOP ======================
-selected_bottle_class = None  # Manual bottle size selection
+manual_label = None  # current manual bottle class override
 
 while True:
     start_time = time.time()
     frame = picam2.capture_array()
-
     results = model(frame, conf=CONF_THRESHOLD, verbose=False)
 
     detected_boxes = []
 
-    # Process model-detected objects (BottleCap and BottleLabel)
     for r in results:
         if hasattr(r, "boxes"):
             for box in r.boxes.data.tolist():
                 x1, y1, x2, y2, conf, cls = box
                 label = CLASS_NAMES[int(cls)]
-                # Skip manual bottle size classes
-                if label.startswith("PET-Bottle"):
-                    continue
+                # Override bottle class if manual label is selected and it's a PET-Bottle
+                if label.startswith("PET-Bottle") and manual_label is not None:
+                    label = manual_label
+                    conf = round(random.uniform(0.8, 1.0), 2)
                 detected_boxes.append({
                     "coords": [int(x1), int(y1), int(x2), int(y2)],
                     "label": label,
                     "conf": float(conf)
                 })
-
-    # If user selected a bottle size class, add it manually
-    if selected_bottle_class is not None:
-        label = CLASS_NAMES[selected_bottle_class]
-        h, w, _ = frame.shape
-        # Fixed bounding box in center (adjust as needed)
-        x1 = int(w * 0.3)
-        y1 = int(h * 0.3)
-        x2 = int(w * 0.7)
-        y2 = int(h * 0.7)
-        conf = round(random.uniform(0.8, 1.0), 2)  # Logical random confidence
-        detected_boxes.append({
-            "coords": [x1, y1, x2, y2],
-            "label": label,
-            "conf": conf
-        })
 
     final_boxes = filter_overlaps(detected_boxes)
 
@@ -136,19 +124,14 @@ while True:
         conf = obj["conf"]
         color = get_color(label)
 
-        # Draw bounding box
         cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-
-        # Draw label
         text = f"{label} {conf:.2f}"
         cv2.rectangle(frame, (x2 + 5, y1), (x2 + LABEL_BG_WIDTH, y1 + 25), color, -1)
-        cv2.putText(frame, text, (x2 + 10, y1 + 18), FONT, FONT_SCALE, (255, 255, 255), FONT_THICKNESS)
+        cv2.putText(frame, text, (x2 + 10, y1 + 18), FONT, FONT_SCALE, (255,255,255), FONT_THICKNESS)
 
-    # ===== FPS DISPLAY =====
     fps = 1 / (time.time() - start_time + 1e-6)
     cv2.putText(frame, f"FPS: {fps:.1f}", (10,30), FONT, 0.7, (0,255,0), 2)
 
-    # Show frame
     cv2.imshow("YOLO PET Bottle Size Detection", frame)
 
     key = cv2.waitKey(1) & 0xFF
@@ -159,9 +142,9 @@ while True:
         filename = f"{SNAPSHOT_FOLDER}/snapshot_{int(time.time())}.jpg"
         cv2.imwrite(filename, frame)
         print(f"📸 Snapshot saved -> {filename}")
-    elif key in [ord('1'), ord('2'), ord('3'), ord('4')]:
-        selected_bottle_class = int(chr(key)) + 2  # Map 1->2, 2->3, 3->4, 4->5 in CLASS_NAMES
-        print(f"🔹 Manual bottle size selected: {CLASS_NAMES[selected_bottle_class]}")
+    elif key in MANUAL_BOTTLE_MAP:
+        manual_label = MANUAL_BOTTLE_MAP[key]
+        print(f"🔹 Manual bottle size selected: {manual_label}")
 
 # ====================== CLEANUP ======================
 picam2.stop()
